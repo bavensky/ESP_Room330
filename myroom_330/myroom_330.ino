@@ -25,7 +25,7 @@ float Temperature, Humidity;
 
 //  Connect WIFI
 //  Connect wifi from room330
-//const char* ssid     = "tong";  
+//const char* ssid     = "tong";
 //const char* password = "man09min";
 //  Connect wifi from CMMakerClub
 const char* ssid     = "NAT.WRTNODE";
@@ -40,8 +40,10 @@ void uploadThingsSpeak(float t, float H, float M);
 //  OLED  initiate
 #define OLED_RESET 4
 Adafruit_SSD1306 display(OLED_RESET);
-//
+// global variable
 int moisture = 0;
+unsigned long previousMillis = 0;
+const long interval = 60000;
 
 void setup() {
 
@@ -63,13 +65,20 @@ void setup() {
 void loop() {
   read_Sensor();
   
-  uploadThingsSpeak(Temperature, Humidity, moisture);
-  reconnectWifiIfLinkDown();
+  unsigned long currentMillis = millis();
+  if (currentMillis - previousMillis >= interval) {
+    uploadThingsSpeak(Temperature, Humidity, moisture);
+    reconnectWifiIfLinkDown();
+    previousMillis = currentMillis;
+  }
   
+  //  uploadThingsSpeak(Temperature, Humidity, moisture);
+  //  reconnectWifiIfLinkDown();
+
   display.setTextSize(2);
   display.setCursor(0, 0);
   display.setTextColor(WHITE);
-  display.println("ESP8266");
+  display.println("MyRoom330");
   display.setTextSize(1);
   display.print("IP : ");
   display.println(WiFi.localIP());
@@ -83,7 +92,7 @@ void loop() {
   display.print("Moisture Level = ");
   display.println(moisture);
   display.display();
-  delay(1000);
+  delay(100);
   display.clearDisplay();
 }
 
