@@ -1,6 +1,8 @@
 #include <ESP8266WiFi.h>
 #include <Wire.h>
 #include "DHT.h"
+#include <OneWire.h>
+#include <DallasTemperature.h>
 #include <Adafruit_GFX.h>
 #include <ESP_Adafruit_SSD1306.h>
 
@@ -23,6 +25,13 @@ DHT dht(DHTPIN, DHTTYPE, 30);
 float Temperature, Humidity;
 //
 
+//  DS18B20 initiate
+#define ONE_WIRE_BUS 0
+OneWire oneWire(ONE_WIRE_BUS);
+DallasTemperature sensors(&oneWire);
+float ds18b20;
+//
+
 //  Connect WIFI
 //  Connect wifi from room330
 //const char* ssid     = "tong";
@@ -34,7 +43,7 @@ float temp;
 
 void connectWifi();
 void reconnectWifiIfLinkDown();
-void uploadThingsSpeak(float t, float H, float M);
+void uploadThingsSpeak(float t, float H, float M, float W);
 //
 
 //  OLED  initiate
@@ -43,7 +52,7 @@ Adafruit_SSD1306 display(OLED_RESET);
 // global variable
 int moisture = 0;
 unsigned long previousMillis = 0;
-const long interval = 60000;
+const long interval = 1000; // update about 0.3 minute
 
 void setup() {
 
@@ -52,14 +61,15 @@ void setup() {
   Wire.begin();
   delay(10);
 
-  dht.begin();
-
-  display.begin(SSD1306_SWITCHCAPVCC, 0x78 >> 1);
+  dht.begin();      // DHT22 begin
+  sensors.begin();  // DS18B20 begin
+  
+  display.begin(SSD1306_SWITCHCAPVCC, 0x78 >> 1); // OLED Begin
 
   display.clearDisplay();
 
-  connectWifi();
-  delay(100);
+  connectWifi();  //  Connect WiFI
+  delay(100); 
 }
 
 void loop() {
@@ -67,13 +77,10 @@ void loop() {
   
   unsigned long currentMillis = millis();
   if (currentMillis - previousMillis >= interval) {
-    uploadThingsSpeak(Temperature, Humidity, moisture);
+    uploadThingsSpeak(Temperature, Humidity, moisture, ds18b20);
     reconnectWifiIfLinkDown();
     previousMillis = currentMillis;
   }
-  
-  //  uploadThingsSpeak(Temperature, Humidity, moisture);
-  //  reconnectWifiIfLinkDown();
 
   display.setTextSize(2);
   display.setCursor(0, 0);
@@ -85,10 +92,13 @@ void loop() {
   display.println(" ");
   display.print("Temp = ");
   display.print(Temperature);
-  display.println("C");
+  display.println(" C");
   display.print("Humi = ");
   display.print(Humidity);
-  display.println("%RH");
+  display.println(" %RH");
+  display.print("Water Temp = ");
+  display.print(ds18b20);
+  display.println(" C");
   display.print("Moisture Level = ");
   display.println(moisture);
   display.display();
@@ -100,11 +110,13 @@ void read_Sensor() {
   Temperature = dht.readTemperature();
   Humidity = dht.readHumidity();
   moisture = map(analogRead(A0), 650, 1023, 10, 0);
+  sensors.requestTemperatures();
+  ds18b20 = sensors.getTempCByIndex(0);
 }
 
-void uploadThingsSpeak(float t, float H, float M) {
+void uploadThingsSpeak(float t, float H, float M, float W) {
   static const char* host = "api.thingspeak.com";
-  static const char* apiKey = "5LLH3VK79YMT0YLU";
+  static const char* apiKey = "1DYAF3DO3X8GR6JS";
 
   // Use WiFiClient class to create TCP connections
   WiFiClient client;
@@ -132,6 +144,12 @@ void uploadThingsSpeak(float t, float H, float M) {
   url += apiKey;
   url += "&field3=";
   url += M;
+  //-----------------------------------------------
+  //-----------------------------------------------
+  url += "?key=";
+  url += apiKey;
+  url += "&field4=";
+  url += W;
   //-----------------------------------------------
   DEBUG_PRINT("Requesting URL: ");
   DEBUG_PRINTLN(url);
