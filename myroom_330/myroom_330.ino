@@ -53,7 +53,7 @@ Adafruit_SSD1306 display(OLED_RESET);
 // global variable
 int moisture = 0;
 unsigned long previousMillis = 0;
-const long interval = 10000; // update about 0.1 minute
+const long interval = 60000; // update about 0.1 minute
 
 void setup() {
 
@@ -78,13 +78,12 @@ void loop() {
   
   read_Sensor();
   
-//  unsigned long currentMillis = millis();
-//  if (currentMillis - previousMillis >= interval) {
-//    delay(100);
+  unsigned long currentMillis = millis();
+  if (currentMillis - previousMillis >= interval) {
     uploadThingsSpeak(Temperature, Humidity, moisture, ds);
     reconnectWifiIfLinkDown();
-//    previousMillis = currentMillis;
-//  }
+    previousMillis = currentMillis;
+  }
 
   display.setTextSize(2);
   display.setCursor(0, 0);
@@ -113,7 +112,12 @@ void loop() {
 void read_Sensor() {
   Temperature = dht.readTemperature();
   Humidity = dht.readHumidity();
-  moisture = map(analogRead(A0), 650, 1023, 10, 0);
+  int sum;
+  for(int i=0; i<1000; i++)  {
+    sum = map(analogRead(A0), 650, 1023, 10, 0);
+    moisture += sum;
+  }
+  moisture = moisture/100;
   sensors.requestTemperatures();
   ds = sensors.getTempCByIndex(0);
 }
