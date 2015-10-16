@@ -120,7 +120,7 @@ void read_Sensor() {
 
 void uploadThingsSpeak(float t, float H, float M, float W) {
   static const char* host = "api.thingspeak.com";
-  static const char* apiKey = "5T4WXGZFE1PZPS2K";
+  static const char* apiKey = "1DYAF3DO3X8GR6JS";
 
   // Use WiFiClient class to create TCP connections
   WiFiClient client;
