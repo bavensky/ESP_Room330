@@ -1,8 +1,8 @@
 #include <ESP8266WiFi.h>
 #include <Wire.h>
 #include "DHT.h"
-#include <OneWire.h>
-#include <DallasTemperature.h>
+//#include <OneWire.h>
+//#include <DallasTemperature.h>
 #include <Adafruit_GFX.h>
 #include <ESP_Adafruit_SSD1306.h>
 
@@ -19,26 +19,26 @@
 //
 
 //  DHT initiate
-#define DHTPIN 2
+#define DHTPIN 12
 #define DHTTYPE DHT22
 DHT dht(DHTPIN, DHTTYPE, 30);
 float Temperature, Humidity;
 //
 
 //  DS18B20 initiate
-#define ONE_WIRE_BUS 0
-OneWire oneWire(ONE_WIRE_BUS);
-DallasTemperature sensors(&oneWire);
-float ds;
+//#define ONE_WIRE_BUS 0
+//OneWire oneWire(ONE_WIRE_BUS);
+//DallasTemperature sensors(&oneWire);
+//float ds;
 //
 
 //  Connect WIFI
-//  Connect wifi from room330
-const char* ssid     = "tong";
-const char* password = "man09min";
-//  Connect wifi from CMMakerClub
-//const char* ssid     = "NAT.WRTNODE";
-//const char* password = "devicenetwork";
+//  Connect wifi for room330
+//const char* ssid     = "tong";
+//const char* password = "man09min";
+//  Connect wifi for CMMakerClub
+const char* ssid     = "NAT.WRTNODE";
+const char* password = "devicenetwork";
 
 
 float temp;
@@ -53,24 +53,19 @@ Adafruit_SSD1306 display(OLED_RESET);
 // global variable
 int moisture = 0;
 unsigned long previousMillis = 0;
-const long interval = 60000; // update about 0.1 minute
+const long interval = 60000; // update about 1 minute
 
 void setup() {
-
   Serial.begin(115200);
-
   Wire.begin();
-  delay(10);
-
+  pinMode(16, OUTPUT);
   dht.begin();      // DHT22 begin
-  sensors.begin();  // DS18B20 begin
+//  sensors.begin();  // DS18B20 begin
   
   display.begin(SSD1306_SWITCHCAPVCC, 0x78 >> 1); // OLED Begin
-  display.clearDisplay();
   
   connectWifi();  //  Connect WiFI
   delay(10); 
-
 }
 
 void loop() {
@@ -80,31 +75,33 @@ void loop() {
   
   unsigned long currentMillis = millis();
   if (currentMillis - previousMillis >= interval) {
-    uploadThingsSpeak(Temperature, Humidity, moisture, ds);
+    uploadThingsSpeak(Temperature, Humidity);
+//    uploadThingsSpeak(Temperature, Humidity, moisture, ds);
     reconnectWifiIfLinkDown();
     previousMillis = currentMillis;
+    digitalWrite(16, LOW);
   }
-
+  
   display.setTextSize(2);
   display.setCursor(0, 0);
   display.setTextColor(WHITE);
-  display.println("MyRoom330");
+  display.println("Weather");
+  display.print("   Station");
   display.setTextSize(1);
   display.print("IP : ");
   display.println(WiFi.localIP());
-  display.println(" Connect done !");
   display.print("Temp = ");
   display.print(Temperature);
   display.println(" C");
   display.print("Humi = ");
   display.print(Humidity);
   display.println(" %RH");
-  display.print("Water Temp = ");
-  display.print(ds);
-  display.println(" C");
-  display.print("Moisture Level = ");
-  display.println(moisture);
+//  display.print("Moisture Level = ");
+//  display.println(moisture);
+//  display.print("Water Temp = ");
+//  display.println(" Not Now");
   display.display();
+  digitalWrite(16, HIGH);
   delay(100);
   display.clearDisplay();
 }
@@ -118,14 +115,13 @@ void read_Sensor() {
     moisture += sum;
   }
   moisture = moisture/100;
-  sensors.requestTemperatures();
-  ds = sensors.getTempCByIndex(0);
+//  sensors.requestTemperatures();
+//  ds = sensors.getTempCByIndex(0);
 }
-
-void uploadThingsSpeak(float t, float H, float M, float W) {
+//void uploadThingsSpeak(float t, float H, float M, float W) 
+void uploadThingsSpeak(float t, float H) {
   static const char* host = "api.thingspeak.com";
-  static const char* apiKey = "1DYAF3DO3X8GR6JS";
-
+  static const char* apiKey = "RL4UFEICOVEIYIDX"; // Room --> 1DYAF3DO3X8GR6JS  CMMC --> RL4UFEICOVEIYIDX 
   // Use WiFiClient class to create TCP connections
   WiFiClient client;
   const int httpPort = 80;
@@ -148,16 +144,16 @@ void uploadThingsSpeak(float t, float H, float M, float W) {
   url += "&field2=";
   url += H;
   //-----------------------------------------------
-  url += "?key=";
-  url += apiKey;
-  url += "&field3=";
-  url += M;
+//  url += "?key=";
+//  url += apiKey;
+//  url += "&field3=";
+//  url += M;
   //-----------------------------------------------
   //-----------------------------------------------
-  url += "?key=";
-  url += apiKey;
-  url += "&field4=";
-  url += W;
+//  url += "?key=";
+//  url += apiKey;
+//  url += "&field4=";
+//  url += W;
   //-----------------------------------------------
   DEBUG_PRINT("Requesting URL: ");
   DEBUG_PRINTLN(url);
